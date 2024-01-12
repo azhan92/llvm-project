@@ -7,16 +7,23 @@
 //===----------------------------------------------------------------------===//
 
 // UNSUPPORTED: no-exceptions
-
 #include <new>
 #include <cassert>
 #include <limits>
+#include <cstdlib>
+
+struct construction_key {};
+struct my_bad_alloc : std::bad_alloc {
+  my_bad_alloc(const my_bad_alloc &) : self(this) { std::abort(); }
+  my_bad_alloc(construction_key) : self(this) {}
+  const my_bad_alloc *const self;
+};
 
 int new_handler_called = 0;
 
 void my_new_handler() {
   ++new_handler_called;
-  throw std::bad_alloc();
+  throw my_bad_alloc(construction_key());
 }
 
 int main(int, char**) {
@@ -25,8 +32,9 @@ int main(int, char**) {
     void* x = operator new[](std::numeric_limits<std::size_t>::max());
     (void)x;
     assert(false);
-  } catch (std::bad_alloc const&) {
+  } catch (my_bad_alloc const& e) {
     assert(new_handler_called == 1);
+    assert(e.self == &e);
   } catch (...) {
     assert(false);
   }
