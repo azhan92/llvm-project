@@ -30,9 +30,9 @@ void my_new_handler() {
 int main(int, char**) {
   std::set_new_handler(my_new_handler);
   try {
-    void* x = operator new[](std::numeric_limits<std::size_t>::max(), std::nothrow);
+    void* x = operator new(std::numeric_limits<std::size_t>::max());
     (void)x;
-    assert(x == NULL);
+    assert(false);
   } catch (my_bad_alloc const& e) {
     assert(new_handler_called == 1);
     assert(e.self == &e);
@@ -41,3 +41,4 @@ int main(int, char**) {
   }
   return 0;
 }
+

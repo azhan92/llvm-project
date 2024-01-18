@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 // UNSUPPORTED: no-exceptions
+
 #include <new>
 #include <cassert>
 #include <limits>
