@@ -1244,7 +1244,9 @@ void Clang::AddPreprocessingOptions(Compilation &C, const JobAction &JA,
 
   Args.addAllArgs(CmdArgs,
                   {options::OPT_D, options::OPT_U, options::OPT_I_Group,
-                   options::OPT_F, options::OPT_index_header_map});
+                   options::OPT_index_header_map});
+  if (!getToolChain().getTriple().isOSAIX() || !getToolChain().getTriple().isOSLinux())
+      Args.AddAllArgs(CmdArgs, options::OPT_F);
 
   // Add -Wp, and -Xpreprocessor if using the preprocessor.
 

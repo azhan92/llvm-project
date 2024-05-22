@@ -827,7 +827,7 @@ def E : Flag<["-"], "E">, Flags<[NoXarchOption]>,
   Visibility<[ClangOption, CC1Option, FlangOption, FC1Option]>,
   Group<Action_Group>,
     HelpText<"Only run the preprocessor">;
-def F : JoinedOrSeparate<["-"], "F">, Flags<[RenderJoined]>,
+def F : JoinedOrSeparate<["-"], "F">, Flags<[RenderJoined, TargetSpecific]>,
   Visibility<[ClangOption, CC1Option]>,
     HelpText<"Add directory to framework include search path">;
 def G : JoinedOrSeparate<["-"], "G">, Flags<[NoXarchOption, TargetSpecific]>,
