@@ -1245,17 +1245,13 @@ void Clang::AddPreprocessingOptions(Compilation &C, const JobAction &JA,
   Args.addAllArgs(CmdArgs,
                   {options::OPT_D, options::OPT_U, options::OPT_I_Group,
                    options::OPT_index_header_map});
-  if (!getToolChain().getTriple().isOSAIX() || !getToolChain().getTriple().isOSLinux())
-      Args.AddAllArgs(CmdArgs, options::OPT_F);
   if (getToolChain().getTriple().isOSAIX() || 
-          getToolChain().getTriple().isOSLinux()) {
-      if (types::isObjC(Inputs[0].getType())) {
-          Args.AddAllArgs(CmdArgs, options::OPT_F);
-      }    
+        getToolChain().getTriple().isOSLinux()) {
+    if (types::isObjC(Inputs[0].getType()))
+         Args.AddAllArgs(CmdArgs, options::OPT_F);
   } else {
-      Args.AddAllArgs(CmdArgs, options::OPT_F);
-  }    
-            
+    Args.AddAllArgs(CmdArgs, options::OPT_F);
+  }              
   // Add -Wp, and -Xpreprocessor if using the preprocessor.
 
   // FIXME: There is a very unfortunate problem here, some troubled
