@@ -33,6 +33,7 @@
 #include "clang/Frontend/Utils.h"
 #include "clang/Frontend/VerifyDiagnosticConsumer.h"
 #include "clang/Lex/HeaderSearch.h"
+#include "clang/Lex/LiteralConverter.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Lex/TextEncoding.h"
@@ -568,10 +569,8 @@ void CompilerInstance::createPreprocessor(TranslationUnitKind TUKind) {
   if (GetDependencyDirectives)
     PP->setDependencyDirectivesGetter(*GetDependencyDirectives);
 
-  if (auto EC = TextEncoding::setConvertersFromOptions(PP->getTextEncoding(),
-                                                       getLangOpts()))
-    PP->getDiagnostics().Report(clang::diag::err_fe_text_encoding_config)
-        << PP->getTextEncoding().getLiteralEncoding();
+  PP->getLiteralConverter().setConvertersFromOptions(getLangOpts(), getTarget(),
+                                                     getDiagnostics());
 }
 
 // ASTContext

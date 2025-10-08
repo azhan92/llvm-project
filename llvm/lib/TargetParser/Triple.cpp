@@ -1140,6 +1140,13 @@ Triple::Triple(ArchType A, SubArchType SA, VendorType V, OSType OS,
       Arch(A), SubArch(SA), Vendor(V), OS(OS), Environment(E),
       ObjectFormat(OF) {}
 
+// Default encoding on z/OS is IBM-1047 and UTF-8 otherwise
+StringRef Triple::getDefaultTextEncoding() const {
+  if (getOS() == llvm::Triple::ZOS)
+    return "IBM-1047";
+  return "UTF-8";
+}
+
 static VersionTuple parseVersionFromName(StringRef Name);
 
 static StringRef getDXILArchNameFromShaderModel(StringRef ShaderModelStr) {
