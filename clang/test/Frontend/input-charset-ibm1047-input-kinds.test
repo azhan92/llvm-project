@@ -1,0 +1,35 @@
+// Test `-finput-charset` with various input source language
+// specifications. Whether character encoding conversion occurs depends on the
+// source language.
+
+// Additional test design points:
+// - Use `cat` and a pipe to verify that the conversion works for pipes too.
+// - Use FileCheck instead of `-verify` in case `-verify` affects the behaviour.
+
+// Input files were converted using `uconv -f UTF-8 -t IBM1047_LF`.
+warn.h:
+```
+#warning Hello, world!
+```
+
+static_assert.i:
+```
+_Static_assert(0, "Hello, world!");
+```
+
+// Test assembler-with-cpp using `#warning`. Conversion is expected (as it also
+// occurs with GCC).
+// RUN: cat %S/Inputs/InputCharsetIBM1047/warn.h | %clang_cc1 -E -finput-charset IBM-1047 -o /dev/null -x assembler-with-cpp - 2>&1 | FileCheck --check-prefix=CHECK-HELLO %s
+// CHECK-HELLO: Hello, world!
+
+// Test cpp-output using `_Static_assert`. Conversion is expected (as it also
+// occurs with GCC). Although Clang/GCC-preprocessed output is in UTF-8,
+// `.i`/`.ii` files from other compilers, tools, or workflows can be in other
+// encodings.
+// RUN: cat %S/Inputs/InputCharsetIBM1047/static_assert.i | not %clang_cc1 -fsyntax-only -finput-charset IBM-1047 -x cpp-output - 2>&1 | FileCheck --check-prefix=CHECK-HELLO %s
+
+// Test ir using a UTF-8 file containing just a comment. No conversion is
+// expected. This is in line with the treatment of `-x assembler` source, which
+// GCC also does not convert. In the `-x assembler` case, the Clang driver does
+// not forward the `-finput-charset` option to any of the tool invocations.
+// RUN: cat %S/Inputs/input-charset-comment.ll | %clang_cc1 -Wno-override-module -emit-llvm -finput-charset IBM-1047 -o /dev/null -x ir - 2>&1 | count 0

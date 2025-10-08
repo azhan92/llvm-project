@@ -1,0 +1,6 @@
+#include "utf-8/neither-sjis-nor-ujis.h"
+// expected-warning@* {{interpreting as UTF-8}}
+constexpr auto North = ñk;
+constexpr auto South = ìÏ;
+constexpr auto East = ìå;
+constexpr auto West = êº;

@@ -7410,6 +7410,11 @@ def emit_hlfir : Flag<["-"], "emit-hlfir">, Group<Action_Group>,
 
 let Visibility = [CC1Option, CC1AsOption] in {
 
+def finput_charset: Separate<["-"], "finput-charset">, MetaVarName<"<charset>">,
+  HelpText<"Set the input <charset> for string and character literals. "
+           "Supported character encodings include ISO-8859-1, UTF-8, IBM1047, "
+	   "and possibly those supported by ICU or the host iconv library.">,
+  MarshallingInfoString<LangOpts<"InputEncoding">>;
 def target_abi : Separate<["-"], "target-abi">,
   HelpText<"Target a particular ABI type">,
   MarshallingInfoString<TargetOpts<"ABI">>;
@@ -9041,7 +9046,7 @@ def _SLASH_showFilenames : CLFlag<"showFilenames">,
 def _SLASH_showFilenames_ : CLFlag<"showFilenames-">,
   HelpText<"Do not print the name of each compiled file (default)">;
 def _SLASH_source_charset : CLCompileJoined<"source-charset:">,
-  HelpText<"Set source encoding, supports only UTF-8">,
+  HelpText<"Set source encoding, supports at least ISO-8859-1, UTF-8, and IBM1047">,
   Alias<finput_charset_EQ>;
 def _SLASH_execution_charset : CLCompileJoined<"execution-charset:">,
   HelpText<"Set runtime encoding, supports only UTF-8">,

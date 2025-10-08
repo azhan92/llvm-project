@@ -1947,8 +1947,13 @@ bool ASTReader::ReadSLocEntry(int ID) {
     }
     SrcMgr::CharacteristicKind
       FileCharacter = (SrcMgr::CharacteristicKind)Record[2];
-    FileID FID = SourceMgr.createFileID(*File, IncludeLoc, FileCharacter, ID,
+
+    // Note: If conversion was originally necessary, OverriddenBuffer should be
+    // true and the associated handling will trigger.
+    FileID FID = SourceMgr.createFileID(*File, IncludeLoc, FileCharacter,
+                                        /*Converter=*/nullptr, ID,
                                         BaseOffset + Record[0]);
+
     SrcMgr::FileInfo &FileInfo = SourceMgr.getSLocEntry(FID).getFile();
     FileInfo.NumCreatedFIDs = Record[5];
     if (Record[3])

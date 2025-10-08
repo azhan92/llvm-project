@@ -1,0 +1,10 @@
+// Test `-finput-charset` with `-include`.
+
+// Input files were converted using `uconv -f UTF-8 -t IBM1047_LF`.
+warn.h:
+```
+#warning Hello, world!
+```
+
+// RUN: %clang_cc1 -E -finput-charset IBM-1047 -o /dev/null -include %S/Inputs/InputCharsetIBM1047/warn.h -x c %S/Inputs/empty.h 2>&1 | FileCheck --check-prefix=CHECK-HELLO %s
+// CHECK-HELLO: Hello, world!

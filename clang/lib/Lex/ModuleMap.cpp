@@ -2255,6 +2255,10 @@ bool ModuleMap::parseAndLoadModuleMapFile(FileEntryRef File, bool IsSystem,
       auto FileCharacter =
           IsSystem ? SrcMgr::C_System_ModuleMap : SrcMgr::C_User_ModuleMap;
       ID = SourceMgr.createFileID(File, ExternModuleLoc, FileCharacter);
+      // FIXME: Module map files are also textual "source files". For
+      // consistency, conversion should occur.
+      ID = SourceMgr.createFileID(File, ExternModuleLoc, FileCharacter,
+                                  /*Converter=*/nullptr);
     }
   }
 

@@ -229,8 +229,34 @@
 // RUN: %clang -S -O20 -o /dev/null %s 2>&1 | FileCheck -check-prefix=CHECK-INVALID-O %s
 // CHECK-INVALID-O: warning: optimization level '-O20' is not supported; using '-O3' instead
 
-// RUN: not %clang -### -S -finput-charset=iso-8859-1 -o /dev/null %s 2>&1 | FileCheck -check-prefix=CHECK-INVALID-INPUT-CHARSET %s
-// CHECK-INVALID-INPUT-CHARSET: error: invalid value 'iso-8859-1' in '-finput-charset=iso-8859-1'
+// RUN: not %clang -### -S -finput-charset=invalid-charset -o /dev/null %s 2>&1 | FileCheck -check-prefix=CHECK-INVALID-INPUT-CHARSET %s
+// CHECK-INVALID-INPUT-CHARSET: error: invalid value 'invalid-charset' in '-finput-charset=invalid-charset'
+
+// Test that we support the following input charsets. The preferred MIME name is
+// `IBM1047`, but `IBM-1047` is the name used by z/OS USS utilities such as
+// `chtag`.
+// RUN: %clang -### -S -finput-charset=UTF-8 -o /dev/null %s 2>&1 | FileCheck --check-prefix=CHECK-INPUT-CHARSET-UTF-8 %s
+// RUN: %clang -### -S -finput-charset=IBM-1047 -o /dev/null %s 2>&1 | FileCheck --check-prefix=CHECK-INPUT-CHARSET-IBM-1047 %s
+// RUN: %clang -### -S -finput-charset=IBM1047 -o /dev/null %s 2>&1 | FileCheck --check-prefix=CHECK-INPUT-CHARSET-IBM1047 %s
+// CHECK-INPUT-CHARSET-UTF-8: "-finput-charset" "UTF-8"
+// CHECK-INPUT-CHARSET-IBM-1047: "-finput-charset" "IBM-1047"
+// CHECK-INPUT-CHARSET-IBM1047: "-finput-charset" "IBM1047"
+
+// Test that `-finput-charset` is passed to `-cc1` even for
+// `-x assembler-with-cpp` and `-x cpp-output` sources. GCC performs character
+// encoding conversion for such input types even though it does not do the same
+// for `-x assembler` sources and it generates preprocessed output in UTF-8.
+// RUN: %clang -### -S -finput-charset=IBM-1047 -o /dev/null -x assembler-with-cpp %s 2>&1 | FileCheck --check-prefix=CHECK-INPUT-CHARSET-ASM-WITH-CPP %s
+// RUN: %clang -### -S -finput-charset=IBM-1047 -o /dev/null -x cpp-output %s 2>&1 | FileCheck --check-prefix=CHECK-INPUT-CHARSET-CPP-OUTPUT %s
+// CHECK-INPUT-CHARSET-ASM-WITH-CPP: "-cc1"
+// CHECK-INPUT-CHARSET-ASM-WITH-CPP-SAME: "-E"
+// CHECK-INPUT-CHARSET-ASM-WITH-CPP-SAME: "-finput-charset" "IBM-1047"
+// CHECK-INPUT-CHARSET-CPP-OUTPUT: "-cc1"
+// CHECK-INPUT-CHARSET-CPP-OUTPUT-SAME: "-finput-charset" "IBM-1047"
+
+// Test that `-finput-charset` is not passed for `-x assembler`. GCC does not perform character encoding conversion for such sources.
+// RUN: %clang -### -S -finput-charset=IBM-1047 -o /dev/null -x assembler %s 2>&1 | FileCheck --check-prefix=CHECK-INPUT-CHARSET-ASM %s
+// CHECK-INPUT-CHARSET-ASM-NOT: "-finput-charset"
 
 // RUN: not %clang -### -S -fexec-charset=iso-8859-1 -o /dev/null %s 2>&1 | FileCheck -check-prefix=CHECK-INVALID-EXEC-CHARSET %s
 // CHECK-INVALID-EXEC-CHARSET: error: invalid value 'iso-8859-1' in '-fexec-charset=iso-8859-1'

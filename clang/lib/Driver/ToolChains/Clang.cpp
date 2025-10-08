@@ -49,6 +49,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Process.h"
+#include "llvm/Support/TextEncoding.h"
 #include "llvm/Support/YAMLParser.h"
 #include "llvm/TargetParser/AArch64TargetParser.h"
 #include "llvm/TargetParser/ARMTargetParserCommon.h"
@@ -7403,12 +7404,20 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     D.Diag(diag::err_drv_clang_unsupported)
         << Args.getLastArg(options::OPT_fno_for_scope)->getAsString(Args);
 
-  // -finput_charset=UTF-8 is default. Reject others
-  if (Arg *inputCharset = Args.getLastArg(options::OPT_finput_charset_EQ)) {
-    StringRef value = inputCharset->getValue();
-    if (!value.equals_insensitive("utf-8"))
-      D.Diag(diag::err_drv_invalid_value) << inputCharset->getAsString(Args)
-                                          << value;
+  if (Arg *inputEncoding = Args.getLastArg(options::OPT_finput_charset_EQ)) {
+    StringRef value = inputEncoding->getValue();
+    // FIXME: Avoid creating a converter for any encoding name that normalizes
+    // to `utf8` for the internal converter. The internal converter rejects
+    // UTF-8 => UTF-8 conversion.
+    llvm::ErrorOr<llvm::TextEncodingConverter> ErrorOrConverter =
+        llvm::TextEncodingConverter::create(value.data(), "UTF-8");
+    if (ErrorOrConverter) {
+      CmdArgs.push_back("-finput-charset");
+      CmdArgs.push_back(Args.MakeArgString(value));
+    } else {
+      D.Diag(diag::err_drv_invalid_value)
+          << inputEncoding->getAsString(Args) << value;
+    }
   }
 
   // -fexec_charset=UTF-8 is default. Reject others

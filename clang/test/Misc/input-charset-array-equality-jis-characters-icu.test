@@ -1,0 +1,22 @@
+// For selected subsets of JIS characters, test that they are interpreted
+// correctly as source characters used to form a string value by comparing
+// against a string value formed using UCNs.
+
+// Test for various ICU converters.
+
+// REQUIRES: icu
+
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-943C -I %S/Inputs/ibm-943c/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-cjk-symbols-and-punctuation-with-ff5e.h -DHEADER2=string-literal-jis-cjk-symbols-and-punctuation.h %S/Inputs/array-equality-check.cc
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-eucJP -I %S/Inputs/ibm-eucjp/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-cjk-symbols-and-punctuation-with-ff5e.h -DHEADER2=string-literal-jis-cjk-symbols-and-punctuation.h %S/Inputs/array-equality-check.cc
+
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-943C -I %S/Inputs/ibm-943c/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-hiragana.h -DHEADER2=string-literal-jis-hiragana.h %S/Inputs/array-equality-check.cc
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-eucJP -I %S/Inputs/ibm-eucjp/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-hiragana.h -DHEADER2=string-literal-jis-hiragana.h %S/Inputs/array-equality-check.cc
+
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-943C -I %S/Inputs/ibm-943c/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-katakana.h -DHEADER2=string-literal-jis-katakana.h %S/Inputs/array-equality-check.cc
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-eucJP -I %S/Inputs/ibm-eucjp/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-katakana.h -DHEADER2=string-literal-jis-katakana.h %S/Inputs/array-equality-check.cc
+
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-943C -I %S/Inputs/ibm-943c/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-cjk-compatibility-ideographs.h -DHEADER2=string-literal-jis-cjk-compatibility-ideographs.h %S/Inputs/array-equality-check.cc
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-eucJP -I %S/Inputs/ibm-eucjp/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-cjk-compatibility-ideographs.h -DHEADER2=string-literal-jis-cjk-compatibility-ideographs.h %S/Inputs/array-equality-check.cc
+
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-943C -I %S/Inputs/ibm-943c/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-halfwidth-and-fullwidth-forms.h -DHEADER2=string-literal-jis-halfwidth-and-fullwidth-forms.h %S/Inputs/array-equality-check.cc
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-eucJP -I %S/Inputs/ibm-eucjp/ -I %S/Inputs/ -DHEADER1=string-literal-ucns-jis-halfwidth-and-fullwidth-forms.h -DHEADER2=string-literal-jis-halfwidth-and-fullwidth-forms.h %S/Inputs/array-equality-check.cc

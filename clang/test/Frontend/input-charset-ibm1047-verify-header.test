@@ -1,0 +1,20 @@
+// XFAIL: *
+// FIXME: This fails currently because the header is first opened by the
+// `VerifyDiagnosticConsumer` without conversion.
+
+// Test `-verify` with an early explicit reference to a header file.
+//
+// Input files were converted using `uconv -f UTF-8 -t IBM1047_LF`.
+
+// verify-header.c:
+// ```
+// // expected-warning@InputCharsetIBM1047/warn.h:1 {{Hello, world!}}
+// #include "InputCharsetIBM1047/warn.h"
+// ```
+
+// warn.h:
+// ```
+// #warning Hello, world!
+// ```
+
+// RUN: %clang_cc1 -verify -finput-charset IBM-1047 -I %S/Inputs %S/Inputs/InputCharsetIBM1047/verify-header.c

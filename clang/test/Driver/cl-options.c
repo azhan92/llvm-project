@@ -1,7 +1,6 @@
 // Note: %s must be preceded by --, otherwise it may be interpreted as a
 // command-line option, e.g. on Mac where %s is commonly under /Users.
 
-
 // Alias options:
 
 // RUN: %clang_cl /c -### -- %s 2>&1 | FileCheck -check-prefix=c %s
@@ -246,9 +245,9 @@
 // RUN: %clang_cl /EP /P /showIncludes -### -- %s 2>&1 | FileCheck -check-prefix=showIncludes_E %s
 // showIncludes_E-NOT: warning: argument unused during compilation: '--show-includes'
 
-// /source-charset: should warn on everything except UTF-8.
-// RUN: not %clang_cl /source-charset:utf-16 -### -- %s 2>&1 | FileCheck -check-prefix=source-charset-utf-16 %s
-// source-charset-utf-16: invalid value 'utf-16' in '/source-charset:utf-16'
+// /source-charset: should warn on invalid charsets.
+// RUN: not %clang_cl /source-charset:invalid-charset -### -- %s 2>&1 | FileCheck -check-prefix=source-charset-invalid %s
+// source-charset-invalid: invalid value 'invalid-charset' in '/source-charset:invalid-charset'
 
 // /execution-charset: should warn on everything except UTF-8.
 // RUN: not %clang_cl /execution-charset:utf-16 -### -- %s 2>&1 | FileCheck -check-prefix=execution-charset-utf-16 %s

@@ -1,0 +1,21 @@
+// FIXME: This passes currently because the module.modulemap file is in UTF-8
+// and no conversion is happening when the file is opened.
+
+// Test `-verify` with an early explicit reference to a module.modulemap file.
+// The module.modulemap file needs to be handled like other source files (i.e.,
+// it should be converted).
+//
+// Input files were converted using `uconv -f UTF-8 -t IBM1047_LF`.
+
+// verify-modulemap.c:
+// ```
+// // expected-error@InputCharsetIBM1047/module.modulemap:2 {{expected '{'}}
+// #include "InputCharsetIBM1047/empty.h"
+// ```
+
+// module.modulemap:
+// ```
+// module A
+// ```
+
+// RUN: %clang_cc1 -verify -finput-charset IBM-1047 -fmodules -fimplicit-module-maps -I %S/Inputs %S/Inputs/InputCharsetIBM1047/verify-modulemap.c

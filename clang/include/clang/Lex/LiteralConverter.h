@@ -16,13 +16,26 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/TextEncoding.h"
 
-enum ConversionAction { NoConversion, ToSystemEncoding, ToExecEncoding };
+/* NoConversion - Do not translate string literals, leave them in UTF-8
+ * ToSystemEncoding - Translate string literals to the system charset (e.g.
+ *     IBM-1047 on z/OS)
+ * FromInputEncoding - Translate from the input charset specified by
+ *     finput-charset if any; otherwise, there is no conversion.
+ * ToExecEncoding - Translate string literals to the exec charset specified by
+ *     fexec-charset; the default is the system charset if not specified.
+ */
+enum ConversionAction { 
+    NoConversion,
+    ToSystemEncoding,
+    FromInputEncoding,
+    ToExecEncoding };
 
 class LiteralConverter {
   llvm::StringRef InternalEncoding;
   llvm::StringRef SystemEncoding;
   llvm::StringRef ExecEncoding;
   llvm::TextEncodingConverter *ToSystemEncodingConverter;
+  std::unique_ptr<llvm::TextEncodingConverter> FromInputEncodingConverter;
   llvm::TextEncodingConverter *ToExecEncodingConverter;
 
 public:

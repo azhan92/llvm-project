@@ -525,6 +525,24 @@ public:
   /// input is a header file (i.e. -x c-header).
   bool IsHeaderFile = false;
 
+  /// Name of the input charset to convert to the internal charset.
+  std::string InputEncoding;
+
+  bool denormalIsIEEE = false;
+
+  /// Specifies the range of source column numbers that will be compiled on
+  /// z/OS.
+  std::optional<std::pair<uint16_t, uint16_t>> Margins;
+
+  /// Specifies the columns used for sequence numbers on z/OS.
+  std::optional<std::pair<uint16_t, uint16_t>> Sequence;
+
+  /// z/OS: the value given to __TAREGT_LIB__, which specifies the
+  ///       z/OS release of the runtime environment be used for this module.
+  ///       We do not initialize this member, as if it is empty we
+  ///       rely on the LE headers to define __TARGET_LIB__.
+  std::string zos_target_lib;
+
   /// The default stream kind used for HIP kernel launching.
   GPUDefaultStreamKind GPUDefaultStream;
 
