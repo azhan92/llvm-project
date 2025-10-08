@@ -8097,19 +8097,20 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     D.Diag(diag::err_drv_clang_unsupported)
         << Args.getLastArg(options::OPT_fno_for_scope)->getAsString(Args);
 
-  // -finput_charset=UTF-8 is default. Reject others
-  if (Arg *inputCharset = Args.getLastArg(options::OPT_finput_charset_EQ)) {
-    StringRef value = inputCharset->getValue();
-    auto encoding = llvm::TextEncodingConverter::getKnownEncoding(value);
-#if CLANG_DEFAULT_INPUT_ENCODING_IBM1047
-    // -finput_charset=IBM-1047 is default
-    bool isValid = encoding && *encoding == llvm::TextEncoding::IBM1047;
-#else
-    bool isValid = encoding && *encoding == llvm::TextEncoding::UTF8;
-#endif
-    if (!isValid)
-      D.Diag(diag::err_drv_invalid_value) << inputCharset->getAsString(Args)
-                                          << value;
+  if (Arg *inputEncoding = Args.getLastArg(options::OPT_finput_charset_EQ)) {
+    StringRef value = inputEncoding->getValue();
+    // FIXME: Avoid creating a converter for any encoding name that normalizes
+    // to `utf8` for the internal converter. The internal converter rejects
+    // UTF-8 => UTF-8 conversion.
+    llvm::ErrorOr<llvm::TextEncodingConverter> ErrorOrConverter =
+        llvm::TextEncodingConverter::create(value.data(), "UTF-8");
+    if (ErrorOrConverter) {
+      CmdArgs.push_back("-finput-charset");
+      CmdArgs.push_back(Args.MakeArgString(value));
+    } else {
+      D.Diag(diag::err_drv_invalid_value)
+          << inputEncoding->getAsString(Args) << value;
+    }
   }
 #if CLANG_DEFAULT_INPUT_ENCODING_IBM1047
   CmdArgs.push_back("-finput-charset");

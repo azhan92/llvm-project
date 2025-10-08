@@ -160,9 +160,7 @@ public:
 
   /// Information on whether this is associated with a FileID for a file (as
   /// opposed to a buffer) and, if so, what conversion (if any) was requested.
-  /// The integer part uses 2 bits: bit 0 indicates if used by FileID,
-  /// bit 1 indicates if the file was tagged.
-  llvm::PointerIntPair<llvm::TextEncodingConverter *, 2u, unsigned>
+  llvm::PointerIntPair<llvm::TextEncodingConverter *, 1u, bool>
       FileIDConverterInfo;
 
   /// A bump pointer allocated array of offsets for each source line.
@@ -973,8 +971,16 @@ public:
   /// being \#included from the specified IncludePosition.
   FileID createFileID(FileEntryRef SourceFile, SourceLocation IncludePos,
                       SrcMgr::CharacteristicKind FileCharacter,
-                      llvm::StringRef InputEncodingName = {}, int LoadedID = 0,
+                      llvm::TextEncodingConverter *Converter, int LoadedID = 0,
                       SourceLocation::UIntTy LoadedOffset = 0);
+
+  FileID createFileID(FileEntryRef SourceFile, SourceLocation IncludePos,
+                      SrcMgr::CharacteristicKind FileCharacter,
+                      int LoadedID = 0,
+                      SourceLocation::UIntTy LoadedOffset = 0) {
+    return createFileID(SourceFile, IncludePos, FileCharacter,
+                        /*Converter=*/nullptr, LoadedID, LoadedOffset);
+  }
 
   /// Create a new FileID that represents the specified memory buffer.
   ///
@@ -998,7 +1004,7 @@ public:
   /// new FileID for the \p SourceFile.
   FileID getOrCreateFileID(FileEntryRef SourceFile,
                            SrcMgr::CharacteristicKind FileCharacter,
-                           llvm::StringRef InputEncodingName = {});
+                           llvm::TextEncodingConverter *Converter = nullptr);
 
   /// Creates an expansion SLocEntry for the substitution of an argument into a
   /// function-like macro's body. Returns the start of the expansion.

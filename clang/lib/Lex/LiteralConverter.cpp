@@ -15,6 +15,8 @@ llvm::TextEncodingConverter *
 LiteralConverter::getConverter(ConversionAction Action) {
   if (Action == ToSystemEncoding)
     return ToSystemEncodingConverter;
+  else if (Action == FromInputEncoding)
+    return FromInputEncodingConverter.get();  
   else if (Action == ToExecEncoding)
     return ToExecEncodingConverter;
   else
@@ -28,6 +30,9 @@ void LiteralConverter::setConvertersFromOptions(
   InternalEncoding = "UTF-8";
   SystemEncoding = TInfo.getTriple().getDefaultTextEncoding();
   ExecEncoding = TInfo.getTriple().getDefaultTextEncoding();
+  StringRef InputEncoding =
+      Opts.InputEncoding.empty() ? InternalEncoding : Opts.InputEncoding;
+
   // Create converter between internal and system encoding
   if (InternalEncoding != SystemEncoding) {
     ErrorOr<TextEncodingConverter> ErrorOrConverter =
@@ -36,6 +41,22 @@ void LiteralConverter::setConvertersFromOptions(
       return;
     ToSystemEncodingConverter =
         new TextEncodingConverter(std::move(*ErrorOrConverter));
+  }
+
+  // Create converter between input encoding specified by finput-charset
+  // and internal encoding.
+  if (InputEncoding != InternalEncoding) {
+    // TODO: When not using iconv, match charsets by normalized name.
+    ErrorOr<TextEncodingConverter> ErrorOrConverter =
+        llvm::TextEncodingConverter::create(InputEncoding, InternalEncoding);
+    if (!ErrorOrConverter)
+      Diags.Report(clang::diag::err_drv_invalid_value)
+          << "-finput-charset" << InputEncoding;
+    else
+      FromInputEncodingConverter =
+        std::make_unique<llvm::TextEncodingConverter>(std::move(*ErrorOrConverter));
+  } else {
+    FromInputEncodingConverter = nullptr;
   }
 
   // Create converter between internal and exec encoding specified

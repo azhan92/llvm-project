@@ -1,0 +1,14 @@
+// Test source location information in diagnostics when the offset is beyond the
+// original file size (as source location handling is sensitive to file sizes).
+//
+// Note: The column number is (unfortunately) the post-conversion byte offset.
+//
+// Input files were converted using `uconv -f UTF-8 -t IBM1047_LF`.
+
+// diag-input-charset-offset-beyond-original-filesize.c:
+// ```
+// int éé = 0;<U+0085>
+// ```
+
+// RUN: %clang_cc1 -finput-charset IBM-1047 %S/Inputs/diag-input-charset-ibm1047-offset-beyond-original-filesize.c 2>&1 | FileCheck %s
+// CHECK: {{.*}}/Inputs/diag-input-charset-ibm1047-offset-beyond-original-filesize.c:1:14: warning: treating Unicode character as whitespace [-Wunicode-whitespace]

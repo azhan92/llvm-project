@@ -1,0 +1,19 @@
+// Test that an included header that is invalid based on the input-charset
+// option triggers the fallback to UTF-8 for that header.
+
+// Test for various ICU converters.
+
+// REQUIRES: icu
+
+// RUN: %clang_cc1 -verify -finput-charset IBM-943C -I %S/Inputs/ %S/Inputs/ibm-943c/include-utf-8-header.cc
+// RUN: %clang_cc1 -verify -finput-charset IBM-eucJP -I %S/Inputs/ %S/Inputs/ibm-eucjp/include-utf-8-header.cc
+
+The IBM-943C and IBM-eucJP files are converted from:
+```
+#include "utf-8/neither-sjis-nor-ujis.h"
+// expected-warning@* {{interpreting as UTF-8}}
+constexpr auto North = 北;
+constexpr auto South = 南;
+constexpr auto East = 東;
+constexpr auto West = 西;
+```

@@ -1,6 +1,6 @@
-#include "utf-8/neither-sjis-nor-ujis.h" // expected-error {{error opening file '<invalid buffer>'}}
-// expected-error@* {{conversion from source encoding failed}}
-constexpr auto North = â€“k;
-constexpr auto South = â€œÃ¬;
-constexpr auto East = â€œÅ’;
-constexpr auto West = ÂÂ¼;
+#include "utf-8/neither-sjis-nor-ujis.h"
+// expected-warning@* {{interpreting as UTF-8}}
+constexpr auto North = ËÌ;
+constexpr auto South = Æî;
+constexpr auto East = Åì;
+constexpr auto West = À¾;

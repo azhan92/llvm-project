@@ -2797,11 +2797,12 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
   // position on the file where it will be included and after the expansions.
   if (IncludePos.isMacroID())
     IncludePos = SourceMgr.getExpansionRange(IncludePos).getEnd();
-  // Use the SourceManager's input charset converter for non-tagged files
-  // by passing the input encoding name
-  llvm::StringRef InputEncodingName = getLangOpts().InputEncoding;
-  FileID FID = SourceMgr.createFileID(*File, IncludePos, FileCharacter,
-                                      InputEncodingName);
+  // Retrieve the converter to the internal charset if it exists.
+  llvm::TextEncodingConverter *Converter =
+      getLiteralConverter().getConverter(FromInputEncoding);
+
+  FileID FID =
+      SourceMgr.createFileID(*File, IncludePos, FileCharacter, Converter);
   if (!FID.isValid()) {
     TheModuleLoader.HadFatalFailure = true;
     return ImportAction::Failure;

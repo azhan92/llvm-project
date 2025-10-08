@@ -1,0 +1,14 @@
+// For the characters of the C++ basic character set (which contains
+// U+000A LINE FEED in addition to the basic character set of C), test that they
+// are interpreted correctly as source characters used to form a string value by
+// comparing against a string value formed using UCNs.
+
+// There is another test that covers the full set of characters in US-ASCII for
+// various ICU converters that preserve the byte sequence of US-ASCII input.
+//
+// This tests various other ICU converters.
+
+// REQUIRES: icu
+
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-943C -I %S/Inputs/ -DHEADER1=raw-string-basic-character-set.h -DHEADER2=string-literal-ucns-basic-character-set.h %S/Inputs/array-equality-check.cc
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-932 -I %S/Inputs/ -DHEADER1=raw-string-basic-character-set.h -DHEADER2=string-literal-ucns-basic-character-set.h %S/Inputs/array-equality-check.cc

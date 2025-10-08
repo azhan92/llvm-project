@@ -1,0 +1,13 @@
+// For the characters of US-ASCII, test that they are interpreted correctly as
+// source characters used to form a string value by comparing against a string
+// value formed using UCNs.
+
+// Test for various ICU converters that are expected to preserve the byte
+// sequence of US-ASCII input.
+//
+// The ICU converters for Shift JIS are not such converters.
+
+// REQUIRES: icu
+
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-eucJP -I %S/Inputs/ -DHEADER1=raw-string-us-ascii-with-lf-for-cr.h -DHEADER2=string-literal-ucns-us-ascii-with-slash-n-for-lf-and-cr.h %S/Inputs/array-equality-check.cc
+// RUN: %clang_cc1 -fsyntax-only -finput-charset IBM-eucKR -I %S/Inputs/ -DHEADER1=raw-string-us-ascii-with-lf-for-cr.h -DHEADER2=string-literal-ucns-us-ascii-with-slash-n-for-lf-and-cr.h %S/Inputs/array-equality-check.cc

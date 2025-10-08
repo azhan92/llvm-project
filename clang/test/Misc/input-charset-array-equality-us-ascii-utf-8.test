@@ -1,0 +1,14 @@
+// For the characters of US-ASCII, test that they are interpreted correctly as
+// source characters used to form a string value by comparing against a string
+// value formed using UCNs.
+
+// Test for `-finput-charset=UTF-8` as the base case that should work without
+// ICU or iconv support.
+
+// RUN: %clang_cc1 -fsyntax-only -finput-charset UTF-8 -I %S/Inputs/ -DHEADER1=raw-string-us-ascii-with-lf-for-cr.h -DHEADER2=string-literal-ucns-us-ascii-with-slash-n-for-lf-and-cr.h %S/Inputs/array-equality-check.cc
+
+
+// Additionally, make use of the test inputs with just the C++26 basic character
+// set (which are used for testing with some ICU converters).
+
+// RUN: %clang_cc1 -fsyntax-only -finput-charset UTF-8 -I %S/Inputs/ -DHEADER1=raw-string-basic-character-set.h -DHEADER2=string-literal-ucns-basic-character-set.h %S/Inputs/array-equality-check.cc

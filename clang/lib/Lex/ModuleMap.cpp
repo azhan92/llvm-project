@@ -2496,7 +2496,10 @@ bool ModuleMap::parseAndLoadModuleMapFile(FileEntryRef File, bool IsSystem,
     if (LocalFID.isInvalid()) {
       auto FileCharacter =
           IsSystem ? SrcMgr::C_System_ModuleMap : SrcMgr::C_User_ModuleMap;
-      LocalFID = SourceMgr.createFileID(File, ExternModuleLoc, FileCharacter);
+      // FIXME: Module map files are also textual "source files". For
+      // consistency, conversion should occur.
+      LocalFID = SourceMgr.createFileID(File, ExternModuleLoc, FileCharacter,
+                                        /*Converter=*/nullptr);
     }
     ID = LocalFID;
   }
