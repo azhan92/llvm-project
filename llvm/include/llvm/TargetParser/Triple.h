@@ -433,6 +433,9 @@ public:
   /// For example, "fooos1.2.3" would return (1, 2, 3).
   LLVM_ABI VersionTuple getEnvironmentVersion() const;
 
+  /// getDefaultTextEncoding - Get the default encoding of the triple.
+  StringRef getDefaultTextEncoding() const;
+
   /// Get the object format for this triple.
   ObjectFormatType getObjectFormat() const { return ObjectFormat; }
 
