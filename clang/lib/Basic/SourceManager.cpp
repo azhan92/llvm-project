@@ -167,7 +167,86 @@ ContentCache::getBufferOrNone(DiagnosticsEngine &Diag, FileManager &FM,
   // If the buffer is valid, check to see if it has a UTF Byte Order Mark
   // (BOM).  We only support UTF-8 with and without a BOM right now.  See
   // http://en.wikipedia.org/wiki/Byte_order_mark for more information.
+  struct CharAndSize {
+    char Char;
+    unsigned Size;
+  };
+
+  // Lambda function to read characters with escaped newline handling
+auto getCharAndSize = [](const char *Ptr, const char *BufEnd) -> CharAndSize {
+  // Simple case: not a backslash
+  if (*Ptr != '\\') {
+    return {*Ptr, 1};
+  }
+
+  // We have a backslash - check if it's an escaped newline
+  const char *Start = Ptr;
+  Ptr++; // Skip the backslash
+
+  // Skip any whitespace after backslash
+  while (Ptr < BufEnd && (*Ptr == ' ' || *Ptr == '\t')) {
+    Ptr++;
+  }
+
+  // Check if we have a newline
+  if (Ptr < BufEnd && (*Ptr == '\n' || *Ptr == '\r')) {
+    // Handle \r\n or \n\r
+    if (Ptr + 1 < BufEnd &&
+        ((Ptr[0] == '\r' && Ptr[1] == '\n') ||
+         (Ptr[0] == '\n' && Ptr[1] == '\r'))) {
+      Ptr += 2;
+    } else {
+      Ptr++;
+    }
+
+    // Escaped newline found - skip it and get next character
+    if (Ptr < BufEnd) {
+      CharAndSize Next = {*Ptr, 1};
+      Next.Size += (Ptr - Start);
+      return Next;
+    }
+  }
+
+  // Not an escaped newline, just return the backslash
+  return {'\\', 1};
+};
+
   StringRef BufStr = Buffer->getBuffer();
+
+  const char *BufStart = BufStr.data();
+  const char *BufEnd = BufStart + BufStr.size();
+  const char *CurPtr = BufStart;
+
+  unsigned CharCount = 0;
+  // Iterate through each logical character in the buffer
+  while (CurPtr < BufEnd && CharCount < 200) {
+    unsigned ByteOffset = CurPtr - BufStart;
+      
+    CharAndSize CS = getCharAndSize(CurPtr, BufEnd);
+    char C = CS.Char;    
+
+    if (C == '\n')
+      llvm::errs() << "[Offset " << ByteOffset << ": '\\n' (newline), Size=" << CS.Size << "]\n";
+    else if (C == '\t')
+      llvm::errs() << "[Offset " << ByteOffset << ": '\\t' (tab), Size=" << CS.Size << "]\n";
+    else if (C == ' ')
+      llvm::errs() << "[Offset " << ByteOffset << ": ' ' (space), Size=" << CS.Size << "]\n";
+    else if (C == '\\')
+      llvm::errs() << "[Offset " << ByteOffset << ": '\\\\' (backslash), Size=" << CS.Size << "]\n";
+    else if (C >= 32 && C < 127)
+      llvm::errs() << "[Offset " << ByteOffset << ": '" << C << "', Size=" << CS.Size << "]\n";
+    else
+      llvm::errs() << "[Offset " << ByteOffset << ": (char " << (int)C << "), Size=" << CS.Size << "]\n";
+
+    // Show when Size > 1 (escaped newline was skipped)
+    if (CS.Size > 1) {
+      llvm::errs() << "  ^^ Skipped " << (CS.Size - 1) << " bytes (escaped newline)\n";
+    }
+
+    CurPtr += CS.Size;
+    CharCount++;
+  }  
+        
   const char *InvalidBOM = getInvalidBOM(BufStr);
 
   if (InvalidBOM) {
