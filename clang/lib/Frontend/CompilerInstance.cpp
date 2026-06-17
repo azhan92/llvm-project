@@ -34,6 +34,7 @@
 #include "clang/Lex/HeaderSearch.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Lex/PreprocessorOptions.h"
+#include "clang/Lex/TextEncoding.h"
 #include "clang/Sema/CodeCompleteConsumer.h"
 #include "clang/Sema/ParsedAttr.h"
 #include "clang/Sema/Sema.h"
@@ -855,12 +856,6 @@ llvm::vfs::OutputBackend &CompilerInstance::getOutputManager() {
 llvm::vfs::OutputBackend &CompilerInstance::getOrCreateOutputManager() {
   if (!hasOutputManager())
     createOutputManager();
-  return getOutputManager();
-}
-
-std::unique_ptr<raw_pwrite_stream> CompilerInstance::createOutputFile(
-    StringRef OutputPath, bool Binary, bool RemoveFileOnSignal,
-    bool UseTemporary, bool CreateMissingDirectories, bool SetOnlyIfDifferent) {
   Expected<std::unique_ptr<raw_pwrite_stream>> OS =
       createOutputFileImpl(OutputPath, Binary, RemoveFileOnSignal, UseTemporary,
                            CreateMissingDirectories, SetOnlyIfDifferent);
@@ -912,15 +907,20 @@ CompilerInstance::createOutputFileImpl(StringRef OutputPath, bool Binary,
 // Initialization Utilities
 
 bool CompilerInstance::InitializeSourceManager(const FrontendInputFile &Input){
-  return InitializeSourceManager(Input, getDiagnostics(), getFileManager(),
-                                 getSourceManager());
+  // Retrieve the converter to the internal charset if it exists.
+  llvm::TextEncodingConverter *Converter =
+      hasPreprocessor() ? getPreprocessor().getTextEncodingConfig().getConverter(
+                              CA_FromInputEncoding)
+                        : nullptr;
+
+  return InitializeSourceManager(Input, Converter, getDiagnostics(),
+                                 getFileManager(), getSourceManager());
 }
 
 // static
-bool CompilerInstance::InitializeSourceManager(const FrontendInputFile &Input,
-                                               DiagnosticsEngine &Diags,
-                                               FileManager &FileMgr,
-                                               SourceManager &SourceMgr) {
+bool CompilerInstance::InitializeSourceManager(
+    const FrontendInputFile &Input, llvm::TextEncodingConverter *Converter,
+    DiagnosticsEngine &Diags, FileManager &FileMgr, SourceManager &SourceMgr) {
   SrcMgr::CharacteristicKind Kind =
       Input.getKind().getFormat() == InputKind::ModuleMap
           ? Input.isSystem() ? SrcMgr::C_System_ModuleMap
@@ -928,7 +928,7 @@ bool CompilerInstance::InitializeSourceManager(const FrontendInputFile &Input,
           : Input.isSystem() ? SrcMgr::C_System : SrcMgr::C_User;
 
   if (Input.isBuffer()) {
-    SourceMgr.setMainFileID(SourceMgr.createFileID(Input.getBuffer(), Kind));
+    SourceMgr.setMainFileID(SourceMgr.createFileID(Input.getBuffer(), Kind, Converter));
     assert(SourceMgr.getMainFileID().isValid() &&
            "Couldn't establish MainFileID!");
     return true;
@@ -939,12 +939,14 @@ bool CompilerInstance::InitializeSourceManager(const FrontendInputFile &Input,
   // Figure out where to get and map in the main file.
   auto FileOrErr = InputFile == "-"
                        ? FileMgr.getSTDIN()
-                       : FileMgr.getFileRef(InputFile, /*OpenFile=*/true);
+                       : FileMgr.getFileRef(InputFile, /*OpenFile=*/true,
+			 /*CacheFailure=*/true, IsText);
   if (!FileOrErr) {
     auto EC = llvm::errorToErrorCode(FileOrErr.takeError());
     if (InputFile != "-")
       Diags.Report(diag::err_fe_error_reading) << InputFile << EC.message();
     else
+      Diags.Report(diag::err_fe_error_reading_stdin) << EC.message();
       Diags.Report(diag::err_fe_error_reading_stdin) << EC.message();
     return false;
   }
@@ -2412,7 +2414,6 @@ CompilerInstance::lookupMissingImports(StringRef Name,
     // Load global module index, or retrieve a previously loaded one.
     GlobalModuleIndex *GlobalIndex = loadGlobalModuleIndex(
       TriggerLoc);
-
     // Only if we have a global index.
     if (GlobalIndex) {
       GlobalModuleIndex::HitSet FoundModules;
