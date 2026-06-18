@@ -14,6 +14,8 @@ using namespace llvm;
 llvm::TextEncodingConverter *
 TextEncoding::getConverter(ConversionAction Action) const {
   switch (Action) {
+  case CA_FromInputEncoding:
+    return FromInputEncodingConverter.get();
   default:
     return nullptr;
   }

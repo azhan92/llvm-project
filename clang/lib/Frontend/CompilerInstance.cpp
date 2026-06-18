@@ -909,7 +909,7 @@ CompilerInstance::createOutputFileImpl(StringRef OutputPath, bool Binary,
 bool CompilerInstance::InitializeSourceManager(const FrontendInputFile &Input){
   // Retrieve the converter to the internal charset if it exists.
   llvm::TextEncodingConverter *Converter =
-      hasPreprocessor() ? getPreprocessor().getTextEncodingConfig().getConverter(
+      hasPreprocessor() ? getPreprocessor().getTextEncoding().getConverter(
                               CA_FromInputEncoding)
                         : nullptr;
 
