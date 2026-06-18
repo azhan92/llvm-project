@@ -15,14 +15,17 @@
 #ifndef LLVM_SUPPORT_TEXT_ENCODING_H
 #define LLVM_SUPPORT_TEXT_ENCODING_H
 
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Config/config.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/ErrorOr.h"
 
+#include <memory>
 #include <string>
 #include <system_error>
+#include <utility>
 
 namespace llvm {
 
@@ -135,6 +138,19 @@ public:
       return std::string(Result);
     return EC;
   }
+};
+
+/// Cache for TextEncodingConverter instances.
+class TextEncodingConverterCache {
+  public:
+  /// Get or create a cached TextEncodingConverter.
+  /// If the converter exists in the cache, returns it. Otherwise, creates a new
+  /// converter, caches it, and returns it.
+  /// \param[in] SourceEncoding the source character encoding name
+  /// \param[in] TargetEncoding the target character encoding name
+  /// \return pointer to the converter or an error code
+  LLVM_ABI static ErrorOr<TextEncodingConverter *>
+  getOrCreateConverter(StringRef SourceEncoding, StringRef TargetEncoding);
 };
 
 } // namespace llvm
