@@ -85,6 +85,8 @@ sed_cmd = (
     "/opt/freeware/bin/sed" if "system-aix" in config.available_features else "sed"
 )
 
+config.substitutions.append(("%sed", sed_cmd))
+
 # Filtering command for testing SARIF output against reference output.
 config.substitutions.append(
     (
