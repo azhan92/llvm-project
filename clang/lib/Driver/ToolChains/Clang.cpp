@@ -8097,15 +8097,27 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     D.Diag(diag::err_drv_clang_unsupported)
         << Args.getLastArg(options::OPT_fno_for_scope)->getAsString(Args);
 
-  // -finput_charset=UTF-8 is default. Reject others
-  if (Arg *inputCharset = Args.getLastArg(options::OPT_finput_charset_EQ)) {
-    StringRef value = inputCharset->getValue();
-    auto encoding = llvm::TextEncodingConverter::getKnownEncoding(value);
-    bool isValid = encoding && *encoding == llvm::TextEncoding::UTF8;
-    if (!isValid)
-      D.Diag(diag::err_drv_invalid_value) << inputCharset->getAsString(Args)
-                                          << value;
+  // The default input encoding depends on the host platform (IBM-1047 on z/OS,
+  // UTF-8 elsewhere); -finput-charset= overrides it.
+#ifdef __MVS__
+  StringRef defaultInputEncoding = "IBM-1047";
+#else
+  StringRef defaultInputEncoding = "UTF-8";
+#endif
+  Arg *inputEncoding = Args.getLastArg(options::OPT_finput_charset_EQ);
+  StringRef value = inputEncoding ? StringRef(inputEncoding->getValue())
+                                  : defaultInputEncoding;
+  bool KnownEncoding =
+      llvm::TextEncodingConverter::getKnownEncoding(value).has_value();
+  if (!KnownEncoding) {
+    llvm::ErrorOr<llvm::TextEncodingConverter> ErrorOrConverter =
+        llvm::TextEncodingConverter::create(value.data(), "UTF-8");
+    if (!ErrorOrConverter)
+      D.Diag(diag::err_drv_invalid_value)
+          << inputEncoding->getAsString(Args) << value;
   }
+  CmdArgs.push_back("-finput-charset");
+  CmdArgs.push_back(Args.MakeArgString(value));
 
   // -fexec_charset=UTF-8 is default. Reject others
   if (Arg *execCharset = Args.getLastArg(options::OPT_fexec_charset_EQ)) {
