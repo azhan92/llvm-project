@@ -160,9 +160,10 @@ public:
 
   /// Information on whether this is associated with a FileID for a file (as
   /// opposed to a buffer) and, if so, what conversion (if any) was requested.
-  /// The integer part uses 2 bits: bit 0 indicates if used by FileID,
-  /// bit 1 indicates if the file was tagged.
-  llvm::PointerIntPair<llvm::TextEncodingConverter *, 2u, unsigned>
+  /// The integer part uses 3 bits: bit 0 indicates if used by FileID,
+  /// bit 1 indicates if the file was tagged, bit 2 indicates if the file must
+  /// be read as binary without any conversion.
+  llvm::PointerIntPair<llvm::TextEncodingConverter *, 3u, unsigned>
       FileIDConverterInfo;
 
   /// A bump pointer allocated array of offsets for each source line.
@@ -285,6 +286,7 @@ public:
   /// Helper methods for FileIDConverterInfo bit manipulation.
   /// Bit 0: Used by FileID flag
   /// Bit 1: File tagged flag
+  /// Bit 2: Read as binary without conversion flag
 
   bool isUsedByFileID() const { return FileIDConverterInfo.getInt() & 0x1; }
 
@@ -305,6 +307,21 @@ public:
       Flags |= 0x2;
     else
       Flags &= ~0x2;
+    FileIDConverterInfo.setInt(Flags);
+  }
+
+  /// Whether the file is read as raw bytes with no conversion. This is the case
+  /// for an untagged file whose encoding was explicitly requested to be UTF-8,
+  /// so that platform auto-conversion (e.g. z/OS assuming IBM-1047 for
+  /// untagged files) does not apply.
+  bool isReadAsBinary() const { return FileIDConverterInfo.getInt() & 0x4; }
+
+  void setReadAsBinary(bool Binary) {
+    unsigned Flags = FileIDConverterInfo.getInt();
+    if (Binary)
+      Flags |= 0x4;
+    else
+      Flags &= ~0x4;
     FileIDConverterInfo.setInt(Flags);
   }
 };

@@ -142,8 +142,10 @@ ContentCache::getBufferOrNone(DiagnosticsEngine &Diag, FileManager &FM,
   // and avoid platform-specific auto-conversion (e.g., EBCDIC->ASCII on z/OS,
   // CRLF->LF on Windows). The explicit converter will handle all
   // transformations.
+  // An explicit request for UTF-8 on an untagged file needs the raw bytes as
+  // well, but has no converter.
   bool NeedsExplicitConversion = FileIDConverterInfo.getPointer() != nullptr;
-  bool IsText = !NeedsExplicitConversion;
+  bool IsText = !NeedsExplicitConversion && !isReadAsBinary();
 
   auto BufferOrError = FM.getBufferForFile(*ContentsEntry, IsFileVolatile,
                                            /*RequiresNullTerminator=*/true,
@@ -642,6 +644,7 @@ FileID SourceManager::createFileID(FileEntryRef SourceFile,
   }
 
   llvm::ErrorOr<llvm::TextEncodingConverter *> Converter = nullptr;
+  bool ReadAsBinary = false;
   llvm::ErrorOr<llvm::SmallString<32>> Ccsid =
       llvm::getEncodingNameFromFileTag(SourceFile.getName());
   if (!Ccsid) {
@@ -669,6 +672,10 @@ FileID SourceManager::createFileID(FileEntryRef SourceFile,
                                SourceFile.getName() +
                                "': " + Converter.getError().message());
     }
+    // UTF-8 needs no converter, but it was explicitly requested for this
+    // untagged file: read the raw bytes so that platform auto-conversion is
+    // not applied.
+    ReadAsBinary = !*Converter;
   }
 
 #ifndef NDEBUG
@@ -687,6 +694,7 @@ FileID SourceManager::createFileID(FileEntryRef SourceFile,
 #endif
   IR.setUsedByFileID(true);
   IR.FileIDConverterInfo.setPointer(Converter ? *Converter : nullptr);
+  IR.setReadAsBinary(ReadAsBinary);
 
   // If this is a named pipe, immediately load the buffer to ensure subsequent
   // calls to ContentCache::getSize() are accurate.
