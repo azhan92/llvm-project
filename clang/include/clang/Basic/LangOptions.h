@@ -635,6 +635,10 @@ public:
   /// Name of the input encoding to convert to the internal encoding.
   std::string InputEncoding;
 
+  /// Name of the input encoding of headers found on -isystem include paths.
+  /// If empty, InputEncoding is used.
+  std::string SystemHeaderInputEncoding;
+
   LangOptions();
 
   /// Set language defaults for the given input language and

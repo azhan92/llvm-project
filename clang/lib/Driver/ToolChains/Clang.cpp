@@ -8119,6 +8119,24 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   CmdArgs.push_back("-finput-charset");
   CmdArgs.push_back(Args.MakeArgString(value));
 
+  // -fisystem-input-charset= controls the encoding of headers found on
+  // -isystem include paths and defaults to the value of -finput-charset. Only
+  // pass it to cc1 when given explicitly, including for UTF-8, since the cc1
+  // default is the (possibly different) -finput-charset value.
+  if (Arg *isystemInputEncoding =
+          Args.getLastArg(options::OPT_fisystem_input_charset_EQ)) {
+    StringRef isystemValue = isystemInputEncoding->getValue();
+    if (llvm::TextEncodingConverter::getKnownEncoding(isystemValue) ==
+            llvm::TextEncoding::UTF8 ||
+        llvm::TextEncodingConverter::create(isystemValue, "UTF-8")) {
+      CmdArgs.push_back("-fisystem-input-charset");
+      CmdArgs.push_back(Args.MakeArgString(isystemValue));
+    } else {
+      D.Diag(diag::err_drv_invalid_value)
+          << isystemInputEncoding->getAsString(Args) << isystemValue;
+    }
+  }
+
   // -fexec_charset=UTF-8 is default. Reject others
   if (Arg *execCharset = Args.getLastArg(options::OPT_fexec_charset_EQ)) {
     StringRef value = execCharset->getValue();

@@ -3331,6 +3331,10 @@ def fexperimental_strict_floating_point : Flag<["-"], "fexperimental-strict-floa
 def finput_charset_EQ : Joined<["-"], "finput-charset=">,
   Visibility<[ClangOption, FlangOption, FC1Option]>, Group<f_Group>,
   HelpText<"Specify the default character set for source files">;
+def fisystem_input_charset_EQ : Joined<["-"], "fisystem-input-charset=">,
+  Visibility<[ClangOption]>, Group<f_Group>,
+  HelpText<"Specify the character set for headers found on -isystem include "
+           "paths. Defaults to the value of -finput-charset">;
 def fexec_charset_EQ : Joined<["-"], "fexec-charset=">, Group<f_Group>;
 def finstrument_functions
     : Flag<["-"], "finstrument-functions">,
@@ -7889,6 +7893,10 @@ def tune_cpu : Separate<["-"], "tune-cpu">,
 def finput_charset: Separate<["-"], "finput-charset">, MetaVarName<"<encoding>">,
   HelpText<"Specify the encoding of source files.">,
   MarshallingInfoString<LangOpts<"InputEncoding">>;
+def fisystem_input_charset : Separate<["-"], "fisystem-input-charset">,
+  MetaVarName<"<encoding>">,
+  HelpText<"Specify the encoding of headers found on -isystem include paths.">,
+  MarshallingInfoString<LangOpts<"SystemHeaderInputEncoding">>;
 def fexec_charset : Separate<["-"], "fexec-charset">, MetaVarName<"<encoding>">,
   HelpText<"Set the <encoding> for ordinary string and character literals. "
            "Supported character encodings include ISO-8859-1, UTF-8, IBM1047, "

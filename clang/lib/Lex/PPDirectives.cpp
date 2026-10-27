@@ -2798,8 +2798,13 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
   if (IncludePos.isMacroID())
     IncludePos = SourceMgr.getExpansionRange(IncludePos).getEnd();
   // Use the SourceManager's input charset converter for non-tagged files
-  // by passing the input encoding name
-  llvm::StringRef InputEncodingName = getLangOpts().InputEncoding;
+  // by passing the input encoding name. System headers use
+  // -fisystem-input-charset if given, and -finput-charset otherwise.
+  const LangOptions &LO = getLangOpts();
+  llvm::StringRef InputEncodingName =
+      SrcMgr::isSystem(FileCharacter) && !LO.SystemHeaderInputEncoding.empty()
+          ? llvm::StringRef(LO.SystemHeaderInputEncoding)
+          : llvm::StringRef(LO.InputEncoding);
   FileID FID = SourceMgr.createFileID(*File, IncludePos, FileCharacter,
                                       InputEncodingName);
   if (!FID.isValid()) {

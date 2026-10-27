@@ -1502,8 +1502,12 @@ bool ModuleMap::parseModuleMapFile(FileEntryRef File, bool IsSystem,
       // Module map files are textual "source files". Use input charset
       // converter if available, and file tag converters are handled by
       // SourceManager's cache. Get input encoding from LangOptions for charset
-      // conversion
-      llvm::StringRef InputEncodingName = LangOpts.InputEncoding;
+      // conversion. System module maps use -fisystem-input-charset if given,
+      // and -finput-charset otherwise.
+      llvm::StringRef InputEncodingName =
+          IsSystem && !LangOpts.SystemHeaderInputEncoding.empty()
+              ? llvm::StringRef(LangOpts.SystemHeaderInputEncoding)
+              : llvm::StringRef(LangOpts.InputEncoding);
       LocalFID = SourceMgr.createFileID(File, ExternModuleLoc, FileCharacter,
                                         InputEncodingName);
     }
