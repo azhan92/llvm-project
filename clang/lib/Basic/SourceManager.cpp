@@ -146,6 +146,10 @@ ContentCache::getBufferOrNone(DiagnosticsEngine &Diag, FileManager &FM,
   // well, but has no converter.
   bool NeedsExplicitConversion = FileIDConverterInfo.getPointer() != nullptr;
   bool IsText = !NeedsExplicitConversion && !isReadAsBinary();
+  llvm::errs() << "[FIC-DEBUG] getBufferOrNone('" << ContentsEntry->getName()
+               << "'): converter=" << (NeedsExplicitConversion ? "SET" : "NULL")
+               << " readAsBinary=" << isReadAsBinary() << " -> opening in "
+               << (IsText ? "TEXT" : "BINARY") << " mode\n";
 
   auto BufferOrError = FM.getBufferForFile(*ContentsEntry, IsFileVolatile,
                                            /*RequiresNullTerminator=*/true,
@@ -491,8 +495,19 @@ SourceManager::getOrCreateConverter(llvm::StringRef SourceEncoding) {
   std::optional<llvm::TextEncoding> SourceKnown =
       llvm::TextEncodingConverter::getKnownEncoding(SourceEncoding);
 
-  if (SourceKnown && *SourceKnown == llvm::TextEncoding::UTF8)
+  llvm::errs() << "[FIC-DEBUG] getOrCreateConverter('" << SourceEncoding
+               << "'): known="
+               << (SourceKnown
+                       ? llvm::TextEncodingConverter::getKnownEncodingName(
+                             *SourceKnown)
+                       : llvm::StringRef("<unknown>"))
+               << "\n";
+
+  if (SourceKnown && *SourceKnown == llvm::TextEncoding::UTF8) {
+    llvm::errs() << "[FIC-DEBUG]   -> UTF-8: returning NULL converter "
+                    "(same as no conversion requested)\n";
     return nullptr;
+  }
 
   // Create a cache key using canonical encoding name
   llvm::StringRef CacheKey =
@@ -502,15 +517,24 @@ SourceManager::getOrCreateConverter(llvm::StringRef SourceEncoding) {
 
   // Check if converter already exists in cache
   auto It = ConverterCache.find(CacheKey);
-  if (It != ConverterCache.end())
+  if (It != ConverterCache.end()) {
+    llvm::errs() << "[FIC-DEBUG]   -> converter cache HIT for '" << CacheKey
+                 << "'\n";
     return It->second.get();
+  }
 
   // Create a new converter
   llvm::ErrorOr<llvm::TextEncodingConverter> NewConverter =
       llvm::TextEncodingConverter::create(SourceEncoding, "UTF-8");
 
-  if (!NewConverter)
+  if (!NewConverter) {
+    llvm::errs() << "[FIC-DEBUG]   -> create('" << SourceEncoding
+                 << "', 'UTF-8') FAILED: " << NewConverter.getError().message()
+                 << "\n";
     return NewConverter.getError();
+  }
+  llvm::errs() << "[FIC-DEBUG]   -> created NEW converter for '" << CacheKey
+               << "'\n";
 
   // Store the converter in the cache
   auto Inserted = ConverterCache.insert(std::make_pair(
@@ -652,6 +676,9 @@ FileID SourceManager::createFileID(FileEntryRef SourceFile,
         << SourceFile.getName() << Ccsid.getError().message();
     return FileID();
   }
+  llvm::errs() << "[FIC-DEBUG] createFileID('" << SourceFile.getName()
+               << "'): fileTag='" << *Ccsid << "' (empty=untagged) "
+               << "InputEncodingName='" << InputEncodingName << "'\n";
   if (!Ccsid->empty()) {
     // File has a tag, use the converter from SourceManager's cache
     Converter = getOrCreateConverter(*Ccsid);
@@ -664,6 +691,7 @@ FileID SourceManager::createFileID(FileEntryRef SourceFile,
     }
     IR.setFileTagged(true);
   } else if (!InputEncodingName.empty()) {
+    llvm::errs() << "[FIC-DEBUG]   -> untagged, using InputEncodingName\n";
     // No file tag but -finput-charset conversion is desired.
     // Get the converter from the cache using the input encoding name.
     Converter = getOrCreateConverter(InputEncodingName);
@@ -676,6 +704,9 @@ FileID SourceManager::createFileID(FileEntryRef SourceFile,
     // untagged file: read the raw bytes so that platform auto-conversion is
     // not applied.
     ReadAsBinary = !*Converter;
+    llvm::errs() << "[FIC-DEBUG]   -> converter="
+                 << (*Converter ? "SET" : "NULL")
+                 << " ReadAsBinary=" << ReadAsBinary << "\n";
   }
 
 #ifndef NDEBUG

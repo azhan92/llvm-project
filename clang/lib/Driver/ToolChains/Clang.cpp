@@ -8116,6 +8116,10 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
       D.Diag(diag::err_drv_invalid_value)
           << inputEncoding->getAsString(Args) << value;
   }
+  llvm::errs() << "[FIC-DEBUG] driver: explicit -finput-charset="
+               << (inputEncoding ? "yes" : "no") << " value='" << value
+               << "' knownEncoding=" << KnownEncoding
+               << " -> emitting '-finput-charset " << value << "' to cc1\n";
   CmdArgs.push_back("-finput-charset");
   CmdArgs.push_back(Args.MakeArgString(value));
 
